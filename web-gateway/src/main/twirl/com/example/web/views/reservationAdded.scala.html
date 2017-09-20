@@ -1,0 +1,13 @@
+@import com.example.reservation.api.ReservationAdded
+@import com.example.web.controllers._
+
+@(added: ReservationAdded)(implicit rh: RequestHeader, messages: Messages)
+
+@main(Messages("reservationAdded")) {
+    <h2>@Messages("reservationAdded")</h2>
+
+    <p>@Messages("reservationAddedDescription")</p>
+
+    <p><a href="@routes.Main.reservations(added.listingId)">@Messages("viewReservationsForListing")</a></p>
+    <p><a href="@routes.Main.index()">@Messages("backToSearch")</a></p>
+}

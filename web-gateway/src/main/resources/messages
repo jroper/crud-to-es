@@ -1,0 +1,26 @@
+holidayListings=Holiday Listings
+
+formErrors=There are some errors in your form.
+
+searchListings=Search Listings
+checkin=When are you checking in?
+checkout=When are you checking out?
+
+listDescription=Showing all listings available from {0} to {1}.
+noListings=There are no listings available for these dates.
+
+price=Price
+priceFormat=${0}/night
+
+bookNow=Book now
+viewReservations=View reservations
+
+reservations=Reservations
+reservationsDescription=Showing current reservations for
+noReservations=There are no current reservations for this listing.
+reservationRange={0} to {1}
+
+reservationAdded=Reservation added
+reservationAddedDescription=Your reservation has been successfully added.
+viewReservationsForListing=View reservations for listing
+backToSearch=Back to search

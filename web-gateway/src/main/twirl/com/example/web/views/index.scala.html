@@ -1,0 +1,18 @@
+@import com.example.web.controllers._
+@import views.html.helper._
+
+@(searchForm: Form[SearchForm])(implicit rh: RequestHeader, messages: Messages)
+
+@main(Messages("holidayListings")) {
+    <h2>@Messages("holidayListings")</h2>
+
+    @foundationForm(searchForm, routes.Main.search()) {
+        <div class="row">
+            <div class="medium-6 columns">
+            @inputText(searchForm("checkin"))
+            @inputText(searchForm("checkout"))
+            </div>
+        </div>
+        <input class="button" type="submit" value="@Messages("searchListings")"/>
+    }
+}

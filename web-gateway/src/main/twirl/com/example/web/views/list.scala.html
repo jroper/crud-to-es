@@ -1,0 +1,39 @@
+@import com.example.web.controllers._
+@import com.example.search.api.ListingSearchResult
+@import views.html.helper._
+
+@(listings: Seq[ListingSearchResult], searchForm: SearchForm, message: Option[String])(implicit rh: RequestHeader, messages: Messages)
+
+@main(Messages("holidayListings")) {
+    <h2>@Messages("holidayListings")</h2>
+
+    <p>@Messages("listDescription", searchForm.checkin, searchForm.checkout)</p>
+
+    @if(listings.isEmpty) {
+        <p>@Messages("noListings")</p>
+    }
+
+    @for(listingGroup <- listings.grouped(3)) {
+        <div class="row">
+            @for(listing <- listingGroup) {
+                <div class="large-4 small-12 columns">
+                    <div class="listing">
+                        <div class="listing-image">
+                            <img src="@_root_.controllers.routes.Assets.at("images/" + listing.image)"/>
+                        </div>
+                        <div class="listing-name">@listing.listingName</div>
+                        <div class="listing-price"><strong>@Messages("price"):</strong> @Messages("priceFormat", listing.price)</div>
+                        @form(routes.Main.book) {
+                            <input type="hidden" name="listingId" value="@listing.listingId"/>
+                            <input type="hidden" name="checkin" value="@searchForm.checkin"/>
+                            <input type="hidden" name="checkout" value="@searchForm.checkout"/>
+                            <input type="submit" value="@Messages("bookNow")" class="button"/>
+                            <a href="@routes.Main.reservations(listing.listingId)">@Messages("viewReservations")</a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+}

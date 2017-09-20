@@ -1,0 +1,7 @@
+
+GET         /                           com.example.web.controllers.Main.index
+GET         /search                     com.example.web.controllers.Main.search
+POST        /book                       com.example.web.controllers.Main.book
+GET         /reservations/:listingId    com.example.web.controllers.Main.reservations(listingId: java.util.UUID)
+
+GET         /assets/*file               controllers.Assets.at(path = "/public", file)

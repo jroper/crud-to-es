@@ -1,0 +1,25 @@
+@import com.example.web.controllers._
+@import com.example.reservation.api.Reservation
+@import java.util.UUID
+@import views.html.helper._
+
+@(listingName: String, reservations: Seq[Reservation])(implicit rh: RequestHeader, messages: Messages)
+
+@main(Messages("reservations")) {
+    <h2>@Messages("reservations")</h2>
+
+    <p>@Messages("reservationsDescription"): <strong>@listingName</strong></p>
+
+    @if(reservations.isEmpty) {
+        <p>@Messages("noReservations")</p>
+    }
+
+    <ul>
+    @for(reservation <- reservations) {
+        <li>
+            @Messages("reservationRange", reservation.checkin, reservation.checkout)
+        </li>
+    }
+    </ul>
+
+}
