@@ -7,11 +7,9 @@
         </encoder>
     </appender>
 
-    <logger name="org.apache.kafka" level="INFO" />
-    <logger name="akka.kafka" level="DEBUG" />
+    <logger name="org.apache.kafka" level="WARN" />
 
     <logger name="akka" level="WARN" />
-    <logger name="com.lightbend.lagom.internal.broker.kafka.KafkaSubscriberActor" level="DEBUG" />
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />

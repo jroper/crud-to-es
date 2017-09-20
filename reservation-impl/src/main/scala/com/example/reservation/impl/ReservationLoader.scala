@@ -9,7 +9,7 @@ import com.example.reservation.api.ReservationService
 import com.example.reservation.impl.crud.{ReservationDao, ReservationPublisher}
 import com.lightbend.lagom.scaladsl.broker.kafka.LagomKafkaComponents
 import com.lightbend.lagom.scaladsl.persistence.jdbc.JdbcPersistenceComponents
-import com.lightbend.lagom.scaladsl.playjson.{EmptyJsonSerializerRegistry, JsonSerializerRegistry}
+import com.lightbend.lagom.scaladsl.playjson.EmptyJsonSerializerRegistry
 import com.softwaremill.macwire._
 import play.api.LoggerConfigurator
 import play.api.db.HikariCPComponents
@@ -50,6 +50,4 @@ abstract class ReservationApplication(context: LagomApplicationContext)
   // Register the JSON serializer registry
   override lazy val jsonSerializerRegistry = EmptyJsonSerializerRegistry
 
-  // Register the holiday-listing persistent entity
-  persistentEntityRegistry.register(wire[ReservationEntity])
 }
