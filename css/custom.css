@@ -1,0 +1,33 @@
+/* by default, hide all images in the image fragments... */
+.image-fragments > img {
+    display: none;
+}
+/* ...unless it's the current fragment */
+.image-fragments > img.current-fragment {
+    display: inline;
+}
+/* since the first image is not a fragment, needs to be treated
+ * specially. we put it as the last child, and default it to be
+ * displayed... */
+.image-fragments > img:last-child {
+    display: inline;
+}
+/* ...and then when there is a current-fragment before it, we
+ * hide it */
+.image-fragments .current-fragment ~ :last-child {
+    display: none;
+}
+
+/* increases contrast on background */
+#presentation h2, #presentation li, #presentation p {
+    text-shadow: #421540 0 0 0.2em;
+}
+
+#presentation a, #presentation a:visited {
+    color: white;
+}
+
+li.and-link {
+    list-style-type: none;
+    padding-left: 40px;
+}

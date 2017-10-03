@@ -1,0 +1,316 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>From CRUD to Event Sourcing</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<link rel="stylesheet" href="css/custom.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal" id="presentation">
+			<div class="slides">
+
+<section>
+
+    <h2>From CRUD to Event Sourcing</h2>
+
+    <p style="font-style: italic;">Why CRUD is the wrong approach for microservices</p>
+
+    <p style="margin-top: 100px; font-weight: bold;">James Roper</p>
+
+    <p><tt>@jroper</tt></p>
+
+    <img style="width: 30%; margin-top: 50px; border: none; background: none; box-shadow: none;" src="assets/lightbend-logo.svg"/>
+</section>
+
+<section>
+    <h2>Agenda</h2>
+
+    <ul>
+        <li class="fragment">Failure test CRUD solutions</li>
+        <li class="fragment">Learn about Event Sourcing</li>
+        <li class="fragment">See why Event Sourcing is resilient</li>
+        <li class="fragment">Live coding!</li>
+    </ul>
+</section>
+
+<section>
+<section>
+    <h2>Holiday Rentals</h2>
+
+    <ul>
+        <li class="fragment">Airbnb like application</li>
+        <li class="fragment">Asynchronous microservice architecture</li>
+        <li class="fragment">Kafka for messaging</li>
+        <li class="fragment">Reservation service uses CRUD persistence</li>
+    </ul>
+</section>
+
+<section>
+    <h2>Architecture</h2>
+    
+    <img src="assets/architecture.png" />
+</section>
+</section>
+
+<section>
+<section>
+    <h2>Service implementation</h2>
+
+    <ul>
+        <li class="fragment">Basic approach:
+            <ul>
+                <li class="fragment">Update database</li>
+                <li class="fragment and-link"><em>and</em></li>
+                <li class="fragment">Publish to Kafka</li>
+            </ul>
+        </li>
+    </ul>
+</section>    
+
+<section>
+    <h2>Naive approach</h2>
+    <div class="image-fragments">
+        <img src="assets/publish-after-1.png" class="fragment"/>
+        <img src="assets/publish-after-2.png" class="fragment"/>
+        <img src="assets/publish-after-3.png" class="fragment"/>
+        <img src="assets/publish-after-4.png" class="fragment"/>
+        <img src="assets/publish-after-0.png" />
+    </div>
+</section>
+
+<section>
+    <h2>What if something goes wrong?</h2>
+
+    <ul>
+        <li class="fragment">Is this approach resilent?</li>
+        <li class="fragment">What if:
+            <ul>
+                <li class="fragment">The service goes down?</li>
+                <li class="fragment">The database goes down?</li>
+                <li class="fragment">Kafka goes down?</li>
+                <li class="fragment">The network goes down?</li>
+            </ul>
+        </li>
+    </ul>
+</section>
+
+<section>
+    <h2>Naive approach</h2>
+    <div class="image-fragments">
+        <img src="assets/publish-after-5.png" class="fragment"/>
+        <img src="assets/publish-after-6.png" class="fragment"/>
+        <img src="assets/publish-after-4.png" />
+    </div>
+</section>
+
+<section>
+    <img src="assets/dino-rent.png" />
+</section>
+
+
+</section>
+
+<section>
+<section>
+    <h2>Another solution?</h2>
+
+    <div class="image-fragments">
+        <img src="assets/commit-after-1.png" class="fragment"/>
+        <img src="assets/commit-after-2.png" class="fragment"/>
+        <img src="assets/commit-after-3.png" class="fragment"/>
+        <img src="assets/commit-after-4.png" class="fragment"/>
+        <img src="assets/commit-after-5.png" class="fragment"/>
+        <img src="assets/commit-after-6.png" class="fragment"/>
+        <img src="assets/commit-after-0.png" />
+    </div>
+</section>
+
+<section>
+    <h2>Two generals problem</h2>
+
+    <img src="assets/2-generals.png" />
+</section>
+
+<section>
+    <h2>Two generals problem</h2>
+
+    <ul>
+        <li class="fragment">It is proven to be unsolveable</li>
+    </ul>
+</section>
+
+<section>
+    <h2>Two-phase commit</h2>
+
+    <ul>
+        <li class="fragment">Can't we just use two-phase commit?
+            <ul>
+                <li class="fragment">No.</li>
+                <li class="fragment">Only reduces the window for failure to cause a problem</li>
+                <li class="fragment">The window is largest when failure is most likely</li>
+                <li class="fragment">Coordination comes at high cost</li>
+            </ul>
+        </li>
+    </ul>
+</section>
+</section>
+
+<section>
+<section>
+    <h2>Too hard?</h2>
+
+    <ul>
+        <li class="fragment">Maybe it's all too hard</li>
+        <li class="fragment">Is inconsistency really that bad?</li>
+    </ul>
+</section>
+
+<section>
+    <h2>An easier way?</h2>
+
+    <ul>
+        <li class="fragment">We can't solve the 2 generals problem</li>
+        <li class="fragment">What if come up with a different plan of attack?</li>
+    </ul>
+</section>
+</section>
+
+<section>
+<section>
+    <h2>Event sourcing</h2>
+
+    <ul>
+        <li class="fragment">Don't store the current state</li>
+        <li class="fragment">Store the events that occurred</li>
+        <li class="fragment">Compute the state from the events</li>
+    </ul>
+</section>
+
+<section>
+    <h2>Event sourcing</h2>
+
+    <div class="image-fragments">
+        <img src="assets/es-append-1.png" class="fragment"/>
+        <img src="assets/es-append-2.png" class="fragment"/>
+        <img src="assets/es-append-3.png" class="fragment"/>
+        <img src="assets/es-append-4.png" class="fragment"/>
+        <img src="assets/es-append-5.png" class="fragment"/>
+        <img src="assets/es-append-0.png"/>
+    </div>
+</section>
+
+<section>
+    <h2>Event sourcing</h2>
+
+    <div class="image-fragments">
+        <img src="assets/es-publish-1.png" class="fragment"/>
+        <img src="assets/es-publish-2.png" class="fragment"/>
+        <img src="assets/es-publish-3.png" class="fragment"/>
+        <img src="assets/es-publish-4.png" class="fragment"/>
+        <img src="assets/es-publish-5.png" class="fragment"/>
+        <img src="assets/es-publish-0.png"/>
+    </div>
+</section>
+
+<section>
+    <h2>Event sourcing</h2>
+
+    <ul>
+        <li>Advantages:
+            <ul>
+                <li class="fragment">Fact centric approach</li>
+                <li class="fragment">Built in audit log</li>
+                <li class="fragment">Compute the state of the system at any time</li>
+            </ul>
+        </li>
+    </ul>
+</section>
+
+<section>
+    <h2>Event sourcing</h2>
+
+    <ul>
+        <li>Details:
+            <ul>
+                <li class="fragment">How is consistency addressed?</li>
+                <li class="fragment">Is replaying events expensive?</li>
+                <li class="fragment">How to query data?</li>
+            </ul>
+        </li>
+    </ul>
+</section>
+</section>
+
+<section>
+<section>
+    <h2>Summary</h2>
+    
+    <ul>
+        <li class="fragment">CRUD is not an ideal fit distributed systems</li>
+        <li class="fragment">Event sourcing is an ideal fit for distributed systems</li>
+        <li class="fragment">Event sourcing brings a host of other advantages</li>
+    </ul>
+</section>
+
+<section>
+    <h2>Next steps</h2>
+
+    <p><a href="http://lagomframework.com">http://lagomframework.com</a></p>
+    <p><a href="https://github.com/jroper/crud-to-es">https://github.com/jroper/crud-to-es</a></p>
+</section>
+</section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+            var sections = document.getElementsByTagName('section');
+			for (var i = 0; i < sections.length; i++) {
+                var slide = sections[i];
+  				if (!(slide.getAttribute('data-background') ||
+        				slide.getAttribute('data-background-video') ||
+        				slide.getAttribute('data-background-iframe'))) {
+    				slide.setAttribute('data-background', 'assets/lagom-hero.png');
+  				}
+			}
+
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				],
+
+                keyboard: {
+                    86: "togglePause"
+                }
+			});
+		</script>
+	</body>
+</html>
