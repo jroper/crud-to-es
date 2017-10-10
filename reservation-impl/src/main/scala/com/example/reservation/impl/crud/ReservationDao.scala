@@ -42,6 +42,12 @@ class ReservationDao(slickApi: SlickApi, publisher: ReservationPublisher)(implic
           reservations += reservation
         }
       } yield {
+        Await.result(publisher.publish(api.ReservationAdded(
+          reservation.listingId,
+          reservation.reservationId,
+          api.Reservation(reservation.checkin, reservation.checkout)
+        )), 5.seconds)
+        
         Done
       }).transactionally
     )

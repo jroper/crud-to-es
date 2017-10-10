@@ -19,29 +19,29 @@ import scala.concurrent.ExecutionContext
 class ReservationServiceImpl(dao: ReservationDao, reservationPublisher: ReservationPublisher,
   persistentEntityRegistry: PersistentEntityRegistry)(implicit ec: ExecutionContext) extends ReservationService {
 
+  private def reservationEntity(listingId: UUID): PersistentEntityRef[ReservationCommand[_]] = {
+    persistentEntityRegistry.refFor[ReservationEntity](listingId.toString)
+  }
+
   override def reserve(listingId: UUID) = ServiceCall { reservation =>
-
-    val dbReservation = crud.Reservation(UUID.randomUUID(), listingId,
-      reservation.checkin, reservation.checkout)
-
-    for {
-      _ <- dao.addReservation(dbReservation)
-      added = api.ReservationAdded(listingId, dbReservation.reservationId, reservation)
-      _ <- reservationPublisher.publish(added)
-    } yield added
-
+    reservationEntity(listingId)
+      .ask(AddReservation(reservation))
+      .map { added =>
+        api.ReservationAdded(added.listingId, added.reservationId, added.reservation)
+      }
   }
 
   override def getCurrentReservations(listingId: UUID) = ServiceCall { _ =>
-    dao.getCurrentReservations(listingId).map { reservations =>
-      reservations.map { reservation =>
-        api.Reservation(reservation.checkin, reservation.checkout)
-      }
-    }
+    reservationEntity(listingId).ask(GetCurrentReservations)
   }
 
-  override def reservationEvents = TopicProducer.singleStreamWithOffset { _ =>
-    Source.maybe
-  }
+  override def reservationEvents =
+    TopicProducer.taggedStreamWithOffset(immutable.Seq(ReservationEvent.Tag)) { (tag, offset) =>
+      persistentEntityRegistry.eventStream(tag, offset).map {
+        case EventStreamElement(_, ReservationAdded(listingId, reservationId, reservation), offset) =>
+          api.ReservationAdded(listingId, reservationId, reservation) -> offset
+      }
+
+    }
 
 }

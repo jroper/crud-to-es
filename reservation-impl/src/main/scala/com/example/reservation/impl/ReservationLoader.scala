@@ -47,7 +47,9 @@ abstract class ReservationApplication(context: LagomApplicationContext)
   // Bind the service that this server provides
   override lazy val lagomServer = serverFor[ReservationService](wire[ReservationServiceImpl])
 
+  persistentEntityRegistry.register(wire[ReservationEntity])
+
   // Register the JSON serializer registry
-  override lazy val jsonSerializerRegistry = EmptyJsonSerializerRegistry
+  override lazy val jsonSerializerRegistry = ReservationSerializerRegistry
 
 }
