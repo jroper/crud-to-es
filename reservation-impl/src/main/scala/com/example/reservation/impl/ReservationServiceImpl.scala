@@ -8,7 +8,7 @@ import com.example.reservation.api.ReservationService
 import com.example.reservation.impl.crud.{ReservationDao, ReservationPublisher}
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.broker.TopicProducer
-import com.lightbend.lagom.scaladsl.persistence.{PersistentEntityRef, PersistentEntityRegistry}
+import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, PersistentEntityRef, PersistentEntityRegistry}
 
 import scala.collection.immutable
 import scala.concurrent.ExecutionContext
