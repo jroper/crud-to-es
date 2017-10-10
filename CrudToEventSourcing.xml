@@ -1,0 +1,137 @@
+<templateSet group="CrudToEventSourcing">
+  <template name="daop" value="Await.result(publisher.publish(api.ReservationAdded(&#10;  reservation.listingId,&#10;  reservation.reservationId,&#10;  api.Reservation(reservation.checkin, reservation.checkout)&#10;)), 5.seconds)&#10;" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="ee" value="sealed trait ReservationEvent extends AggregateEvent[ReservationEvent] {&#10;  def aggregateTag = ReservationEvent.Tag&#10;}&#10;&#10;object ReservationEvent {&#10;  val Tag = AggregateEventTag[ReservationEvent]&#10;}&#10;$END$" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="eer" value="case class ReservationAdded(&#10;  listingId: UUID,&#10;  reservationId: UUID,&#10;  reservation: Reservation&#10;) extends ReservationEvent&#10;&#10;object ReservationAdded {&#10;  implicit val format: Format[ReservationAdded] = Json.format&#10;}&#10;$END$" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="ec" value="sealed trait ReservationCommand[R] extends ReplyType[R]&#10;$END$" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="eca" value="case class AddReservation(&#10;  reservation: Reservation&#10;) extends ReservationCommand[ReservationAdded]&#10;&#10;object AddReservation {&#10;  implicit val format: Format[AddReservation] = Json.format&#10;}&#10;$END$" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="ecg" value="case object GetCurrentReservations extends ReservationCommand[Seq[Reservation]] {&#10;  implicit val format: Format[GetCurrentReservations.type] =&#10;    Format(Reads(_ =&gt; JsSuccess(GetCurrentReservations)), Writes(_ =&gt; JsString(&quot;get&quot;)))&#10;}&#10;$END$" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="esr" value="object ReservationSerializerRegistry extends JsonSerializerRegistry {&#10;  override def serializers: Seq[JsonSerializer[_]] = Seq(&#10;    JsonSerializer[ReservationAdded],&#10;    JsonSerializer[AddReservation],&#10;    JsonSerializer[GetCurrentReservations.type],&#10;    JsonSerializer[ReservationState]&#10;  )&#10;}&#10;$END$" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="es" value="case class ReservationState(reservations: Seq[Reservation])&#10;&#10;object ReservationState {&#10;  implicit val format: Format[ReservationState] = Json.format&#10;  val empty = ReservationState(Nil)&#10;}&#10;$END$" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="eb1" value="class ReservationEntity extends PersistentEntity {&#10;&#10;  override type Command = ReservationCommand[_]&#10;  override type Event = ReservationEvent&#10;  override type State = ReservationState&#10;&#10;  private lazy val listingId = UUID.fromString(entityId)&#10;&#10;  override def initialState: ReservationState = ReservationState.empty&#10;&#10;  override def behavior: Behavior = {&#10;    $END$&#10;  }&#10;}" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="eb2" value="case ReservationState(reservations) =&gt;&#10;  $END$" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="eb3" value="Actions().onCommand[AddReservation, ReservationAdded] {&#10;&#10;  case (AddReservation(reservation), ctx, _) =&gt;&#10;    $END$&#10;}" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="eb4" value="// Validate start/end dates&#10;val now = LocalDate.now()&#10;if (reservation.checkout.isBefore(reservation.checkin) || reservation.checkout == reservation.checkin) {&#10;  ctx.commandFailed(BadRequest(&quot;Checkout date must be after checkin date&quot;))&#10;  ctx.done&#10;} else if (reservation.checkin.isBefore(now)) {&#10;  ctx.commandFailed(BadRequest(&quot;Cannot make a reservation for the past&quot;))&#10;  ctx.done&#10;  // Check that it doesn't overlap with any existing reservations&#10;} else if (reservations.exists(_.conflictsWith(reservation))) {&#10;  ctx.commandFailed(BadRequest(&quot;Listing is already booked for those dates&quot;))&#10;  ctx.done&#10;} else {&#10;  $END$&#10;}" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="eb5" value="ctx.thenPersist(ReservationAdded(listingId, UUID.randomUUID(), reservation))(ctx.reply)" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="eb6" value=".onReadOnlyCommand[GetCurrentReservations.type, Seq[Reservation]] {&#10;  case (GetCurrentReservations, ctx, _) =&gt;&#10;    $END$&#10;}" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="eb7" value="val now = LocalDate.now()&#10;ctx.reply(reservations.dropWhile(_.checkout.isBefore(now)))" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="eb8" value=".onEvent {&#10;  case (ReservationAdded(_, _, reservation), state) =&gt;&#10;    $END$&#10;}&#10;" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="eb9" value="ReservationState((reservations :+ reservation)&#10;  .sortBy(_.checkin.asInstanceOf[ChronoLocalDate]))" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="re" value="persistentEntityRegistry.register(wire[ReservationEntity])" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="ref" value="private def reservationEntity(listingId: UUID): PersistentEntityRef[ReservationCommand[_]] = {&#10;  persistentEntityRegistry.refFor[ReservationEntity](listingId.toString)&#10;}&#10;" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="sr1" value="reservationEntity(listingId)&#10;  $END$" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="sr2" value=".ask(AddReservation(reservation))&#10;" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="sr3" value=".map { added =&gt;&#10;  api.ReservationAdded(added.listingId, added.reservationId, added.reservation)&#10;}" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="sg" value="reservationEntity(listingId).ask(GetCurrentReservations)" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="se1" value="TopicProducer.taggedStreamWithOffset(immutable.Seq(ReservationEvent.Tag)) { (tag, offset) =&gt;&#10;  $END$&#10;}" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="se2" value="persistentEntityRegistry.eventStream(tag, offset)" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="se3" value=".map {&#10;  case EventStreamElement(_, ReservationAdded(listingId, reservationId, reservation), offset) =&gt;&#10;    $END$&#10;}&#10;" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+  <template name="se4" value="api.ReservationAdded(listingId, reservationId, reservation) -&gt; offset" description="" toReformat="false" toShortenFQNames="true">
+    <context>
+      <option name="SCALA_CODE" value="true" />
+    </context>
+  </template>
+</templateSet>
