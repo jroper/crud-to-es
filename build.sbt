@@ -8,8 +8,6 @@ val macwire = "com.softwaremill.macwire" %% "macros" % "2.2.5" % "provided"
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.1" % Test
 
 lagomCassandraEnabled in ThisBuild := false
-// Disabled so that it can be externally stopped/started for the purpose of demoing
-lagomKafkaEnabled in ThisBuild := false
 
 lazy val `holiday-listing` = (project in file("."))
   .aggregate(`reservation-api`, `reservation-impl`, `search-api`, `search-impl`)
@@ -72,13 +70,3 @@ lazy val `web-gateway` = (project in file("web-gateway"))
     ),
     lagomWatchDirectories ++= (sourceDirectories in (Compile, TwirlKeys.compileTemplates)).value
   )
-
-commands += Command.command("startKafka") { state =>
-  IO.delete(Project.extract(state).get(baseDirectory) / "target" / "lagom-dynamic-projects" / "lagom-internal-meta-project-kafka")
-  if (Project.extract(state).get(lagomKafkaEnabled)) {
-    "lagomKafkaStart" :: state
-  } else {
-    "set lagomKafkaEnabled in ThisBuild := true" :: "lagomKafkaStart" :: state
-  }
-}
-addCommandAlias("stopKafka", "lagomKafkaStop")

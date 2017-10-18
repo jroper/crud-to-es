@@ -1,5 +1,6 @@
 package com.example.search.impl
 
+import java.io.{File, FileInputStream, FileOutputStream}
 import java.time.LocalDate
 import java.util.UUID
 
@@ -12,6 +13,8 @@ import com.lightbend.lagom.scaladsl.api.transport.NotFound
 import akka.pattern.ask
 import akka.stream.scaladsl.Flow
 import akka.util.Timeout
+import play.api.libs.json.{Format, Json}
+
 import scala.concurrent.duration._
 
 /**
@@ -24,6 +27,8 @@ class SearchServiceImpl(reservationService: ReservationService, actorSystem: Act
   implicit val searchActorTimeout = Timeout(10.seconds)
 
   reservationService.reservationEvents.subscribe.atLeastOnce(Flow[ReservationAdded].mapAsync(1) { reservation =>
+    println(s"Got message: $reservation")
+
     (searchActor ? reservation).mapTo[Done]
   })
 
@@ -44,43 +49,90 @@ private object SearchActor {
 private class SearchActor extends Actor {
   import SearchActor._
 
-  val listings: Seq[ListingSearchResult] = Seq(
-    ListingSearchResult(UUID.randomUUID(), "Beach house with wonderful views", "beachhouse.jpeg", 280),
-    ListingSearchResult(UUID.randomUUID(), "Villa by the water", "villa.jpeg", 350),
-    ListingSearchResult(UUID.randomUUID(), "Budget hotel convenient to town centre", "hotel.jpeg", 120),
-    ListingSearchResult(UUID.randomUUID(), "Quaint country B&B", "bnb.jpeg", 180)
-  )
-  // Not at all an efficient (or persistent) index, but this is a demo and this code isn't the subject of the demo
-  var reservations: Map[UUID, (ListingSearchResult, Set[ReservationAdded])] = {
-    listings.map { listing =>
-      listing.listingId -> (listing, Set.empty[ReservationAdded])
-    }.toMap
-  }
+  val repo = new SearchRepository
 
   override def receive = {
 
     case reservation: ReservationAdded =>
-      reservations.get(reservation.listingId) match {
-        case Some((listing, res)) =>
-          if (res.forall(_.reservationId != reservation.reservationId)) {
-            reservations += (listing.listingId -> ((listing, res + reservation)))
-          }
-          sender() ! Done
-        case None =>
-          // Ignore
-          sender() ! Done
-      }
+      sender() ! repo.add(reservation)
 
     case Search(checkin, checkout) =>
-      sender() ! reservations.values.collect {
-        case (listing, res) if res.forall(reservationDoesNotConflict(checkin, checkout)) => listing
-      }.toList
+      sender() ! repo.search(checkin, checkout)
 
     case ListingName(listingId) =>
-      reservations.get(listingId) match {
-        case Some((listing, _)) => sender() ! listing.listingName
+      repo.name(listingId) match {
+        case Some(name) => sender() ! name
         case None => sender() ! Status.Failure(NotFound(s"Listing $listingId not found"))
       }
+  }
+}
+
+/**
+  * Not at all an efficient index, but this is a demo and this code isn't the subject of the demo
+  */
+private class SearchRepository {
+  private val reservationFile = new File("./target/search-index.json")
+
+  private var reservations: Map[UUID, ListingIndex] = if (reservationFile.exists()) {
+    val is = new FileInputStream(reservationFile)
+    try {
+      val raw = Json.parse(is).as[Map[String, ListingIndex]]
+      raw.map {
+        case (id, index) => UUID.fromString(id) -> index
+      }
+    } finally {
+      is.close()
+    }
+  } else {
+    Seq(
+      ListingSearchResult(UUID.randomUUID(), "Beach house with wonderful views", "beachhouse.jpeg", 280),
+      ListingSearchResult(UUID.randomUUID(), "Villa by the water", "villa.jpeg", 350),
+      ListingSearchResult(UUID.randomUUID(), "Budget hotel convenient to town centre", "hotel.jpeg", 120),
+      ListingSearchResult(UUID.randomUUID(), "Quaint country B&B", "bnb.jpeg", 180)
+    ).map { listing =>
+      listing.listingId -> ListingIndex(listing, Set.empty)
+    }.toMap
+  }
+
+  if (!reservationFile.exists()) {
+    writeOut()
+  }
+
+  private def writeOut(): Unit = {
+    val json = Json.stringify(Json.toJson(reservations.map {
+      case (id, index) => id.toString -> index
+    }))
+    val os = new FileOutputStream(reservationFile)
+    try {
+      os.write(json.getBytes("utf-8"))
+      os.flush()
+    } finally {
+      os.close()
+    }
+  }
+
+  def add(reservation: ReservationAdded): Done = {
+    reservations.get(reservation.listingId) match {
+      case Some(ListingIndex(listing, res)) =>
+        if (res.forall(_.reservationId != reservation.reservationId)) {
+          reservations += (listing.listingId -> ListingIndex(listing, res + reservation))
+          writeOut()
+        }
+        Done
+      case None =>
+        // Ignore
+        Done
+    }
+  }
+
+  def search(checkin: LocalDate, checkout: LocalDate): List[ListingSearchResult] = {
+    reservations.values.collect {
+      case ListingIndex(listing, res) if res.forall(reservationDoesNotConflict(checkin, checkout)) => listing
+    }.toList
+  }
+
+  def name(listingId: UUID): Option[String] = {
+    reservations.get(listingId).map(_.listing.listingName)
   }
 
   private def reservationDoesNotConflict(checkin: LocalDate, checkout: LocalDate)(reservationAdded: ReservationAdded): Boolean = {
@@ -95,4 +147,9 @@ private class SearchActor extends Actor {
       false
     }
   }
+}
+
+private case class ListingIndex(listing: ListingSearchResult, reservations: Set[ReservationAdded])
+private object ListingIndex {
+  implicit val format: Format[ListingIndex] = Json.format
 }

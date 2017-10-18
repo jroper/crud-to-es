@@ -20,7 +20,7 @@ import scala.concurrent.Future
 class ReservationPublisher(system: ActorSystem)(implicit mat: Materializer) {
 
   private val producerSettings = ProducerSettings(system, new StringSerializer, new StringSerializer)
-    .withBootstrapServers("localhost:9092")
+    .withBootstrapServers(system.settings.config.getString("lagom.broker.kafka.brokers"))
   private val kafkaProducer = producerSettings.createKafkaProducer()
 
   def publish(reservationAdded: ReservationAdded): Future[Done] = {
